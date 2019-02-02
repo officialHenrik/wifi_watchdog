@@ -67,7 +67,8 @@ class WifiWatchdog:
     def wlan_restart(self):
         print("restarting wlan")
             
-        if subprocess.call(["which" "nmcli"]):
+        nmcli_path = subprocess.call(["which", "nmcli"])
+        if nmcli_path != "":
             # Works on ubuntu
             subprocess.call(["nmcli", "radio", "wifi", "off"])
             time.sleep(5)
@@ -85,7 +86,6 @@ wd = WifiWatchdog()
 # Schedule every..
 schedule.every(1).hours.do(wd.check)
 
-wd.router_reboot()
 
 # ------------------------------------------------------
 # Run forever
