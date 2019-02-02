@@ -9,6 +9,7 @@ import telnetlib
 class WifiWatchdog:
     
     def __init__(self):
+        print("init watchdog")
     
     def check(self):
     
@@ -49,7 +50,7 @@ class WifiWatchdog:
     def router_reboot(self):
         
         print("Connecting to router...")
-        tn = telnetlib.Telnet("192.168.0.1")
+        tn = telnetlib.Telnet(host="192.168.0.1", port=23, timeout=5)
         print("Logging in")
         tn.read_until("username:")
         tn.write("henrni" + "\n")
@@ -58,6 +59,7 @@ class WifiWatchdog:
         tn.read_until("TP-LINK(conf)#")
         print("Rebooting router")
         tn.write("dev reboot" + "\n")
+        print("Reboot delay")
         time.sleep(10)
         tn.close()
         
@@ -82,7 +84,6 @@ wd = WifiWatchdog()
 
 # Schedule every..
 schedule.every(1).hours.do(wd.check)
-
 
 wd.router_reboot()
 
