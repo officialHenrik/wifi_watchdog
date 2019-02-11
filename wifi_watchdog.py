@@ -5,6 +5,7 @@ import schedule
 import subprocess
 import telnetlib
 import json
+import os
 
     
 # ------------------------------------------------------
@@ -14,18 +15,17 @@ class WifiWatchdog:
         print("init watchdog")
         with open('config.json', 'r') as f:
             self.cfg = json.load(f)
+        self.tests = 0
     
     def check(self):
     
-        print("")
-        print("Checking internet connetion...")
-        print(str(time.strftime("%d/%m/%Y")) + " " + str(time.strftime("%H:%M:%S")))
-        
-        print("Checking local...")
-        error = subprocess.call(["ping", "-c4", self.cfg['localhost']])
+        FNULL = open(os.devnull, 'w')
+                
+        error = subprocess.call(["ping", "-c4", self.cfg['localhost']], stdout=FNULL)
         
         if error == 0:
-            print("local ping success")
+            # success
+            self.tests += 1
         elif error == 1:
             print("local host unreachable")
             self.wlan_restart()
@@ -35,11 +35,11 @@ class WifiWatchdog:
         else:
             print("unknown local error: {}".format(error))
 
-        print("Checking global...")
-        error = subprocess.call(["ping", "-c4", self.cfg['globalhost']])
+        error = subprocess.call(["ping", "-c4", self.cfg['globalhost']], stdout=FNULL)
         
         if error == 0:
-            print("ping success")
+            # success
+            self.tests += 1
         elif error == 1:
             print("host unreachable")
             self.router_reboot()
@@ -47,8 +47,8 @@ class WifiWatchdog:
             print("network unreachable")
         else:
             print("unknown error: {}".format(error))
-        print("------------------------------------------------------")
                   
+        print(str(time.strftime("%d/%m/%Y")) + " " + str(time.strftime("%H:%M:%S")) + ": " + str(self.tests))
                   
     def router_reboot(self):
         try:
