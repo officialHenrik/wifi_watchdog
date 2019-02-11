@@ -1,0 +1,6 @@
+{
+  "localhost"  : "192.168.0.1",
+  "globalhost" : "www.google.com",
+  "telnet_usr" : "user",
+  "telnet_pwr" : "password"
+}

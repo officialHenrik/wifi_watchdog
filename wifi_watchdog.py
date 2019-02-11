@@ -4,12 +4,16 @@ import time
 import schedule
 import subprocess
 import telnetlib
+import json
 
+    
 # ------------------------------------------------------
 class WifiWatchdog:
     
     def __init__(self):
         print("init watchdog")
+        with open('config.json', 'r') as f:
+            self.cfg = json.load(f)
     
     def check(self):
     
@@ -18,7 +22,7 @@ class WifiWatchdog:
         print(str(time.strftime("%d/%m/%Y")) + " " + str(time.strftime("%H:%M:%S")))
         
         print("Checking local...")
-        error = subprocess.call(["ping", "-c4", "192.168.0.1"])
+        error = subprocess.call(["ping", "-c4", self.cfg['localhost']])
         
         if error == 0:
             print("local ping success")
@@ -31,9 +35,8 @@ class WifiWatchdog:
         else:
             print("unknown local error: {}".format(error))
 
-
         print("Checking global...")
-        error = subprocess.call(["ping", "-c4", "www.google.com"])
+        error = subprocess.call(["ping", "-c4", self.cfg['globalhost']])
         
         if error == 0:
             print("ping success")
@@ -48,37 +51,42 @@ class WifiWatchdog:
                   
                   
     def router_reboot(self):
-        
-        print("Connecting to router...")
-        tn = telnetlib.Telnet(host="192.168.0.1", port=23, timeout=5)
-        print("Logging in")
-        tn.read_until("username:")
-        tn.write("henrni" + "\n")
-        tn.read_until("password:")
-        tn.write("ebbeebbe" + "\n")
-        tn.read_until("TP-LINK(conf)#")
-        print("Rebooting router")
-        tn.write("dev reboot" + "\n")
-        print("Reboot delay")
-        time.sleep(10)
-        tn.close()
+        try:
+            print("Connecting to router...")
+            tn = telnetlib.Telnet(host=self.cfg['localhost'], port=23, timeout=5)
+            print("Logging in")
+            tn.read_until("username:", timeout=5)
+            tn.write(self.cfg['telnet_usr'] + "\n")
+            tn.read_until("password:", timeout=5)
+            tn.write(self.cfg['telnet_pwr'] + "\n")
+            tn.read_until("TP-LINK(conf)#", timeout=5)
+            print("Rebooting router")
+            tn.write("dev reboot" + "\n")
+            print("Reboot delay")
+            time.sleep(10)
+            tn.close()
+        except:
+            print("Unexpected telnet error")
         
         
     def wlan_restart(self):
         print("restarting wlan")
             
-        nmcli_path = subprocess.call(["which", "nmcli"])
-        if nmcli_path != "":
-            # Works on ubuntu
-            subprocess.call(["nmcli", "radio", "wifi", "off"])
-            time.sleep(5)
-            subprocess.call(["nmcli", "radio", "wifi", "on"])
-        else:
-            # Should work on the raspberry pi
-            subprocess.call(["/sbin/ifdown", "wlan0"])
-            time.sleep(5)
-            subprocess.call(["/sbin/ifup", "--force", "wlan0"])
-        time.sleep(20)            
+        try:
+            nmcli_path = subprocess.call(["which", "nmcli"])
+            if nmcli_path != "":
+                # Works on ubuntu
+                subprocess.call(["nmcli", "radio", "wifi", "off"])
+                time.sleep(5)
+                subprocess.call(["nmcli", "radio", "wifi", "on"])
+            else:
+                # Should work on the raspberry pi
+                subprocess.call(["/sbin/ifdown", "wlan0"])
+                time.sleep(5)
+                subprocess.call(["/sbin/ifup", "--force", "wlan0"])
+        except:
+            print("Unexpected wlan restart error")
+        time.sleep(60)            
         
 # ------------------------------------------------------
 wd = WifiWatchdog()
