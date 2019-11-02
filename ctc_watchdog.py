@@ -8,49 +8,52 @@ import json
 import os
 
 import RPi.GPIO as GPIO
-    
+
 # ------------------------------------------------------
-class WifiWatchdog:
-    
+class Watchdog:
+
     def __init__(self):
         print("init watchdog")
         with open('config.json', 'r') as f:
             self.cfg = json.load(f)
         self.tests = 0
-    
+
+        # Setup
+        GPIO.setmode(GPIO.BCM) # set up BCM GPIO numbering
+        GPIO.setwarnings(True)
+
+        GPIO.setup(self.cfg['RELAY_ENABLE'], GPIO.OUT)
+        GPIO.output(self.cfg['RELAY_ENABLE'], GPIO.LOW)
+
+
     def check(self):
-    
         FNULL = open(os.devnull, 'w')
-                
-        error = subprocess.call(["ping", "-c4", self.cfg['localhost']], stdout=FNULL)
-        
+        error = subprocess.call(["ping", "-c1", self.cfg['localhost']], stdout=FNULL)
+
         if error == 0:
             # success
+            print("ping success!")
             self.tests += 1
         elif error == 1:
             print("local host unreachable")
-            self.wlan_restart()
+            self.ctc_reboot()
         elif error == 2:
             print("local network unreachable")
-            self.wlan_restart()
         else:
             print("unknown local error: {}".format(error))
 
-        error = subprocess.call(["ping", "-c4", self.cfg['globalhost']], stdout=FNULL)
- 
     def ctc_reboot(self):
-        try:
-            print("Connecting to router...")
-        except:
-            print("Unexpected telnet error")
-        
-               
-        
+        print("Rebooting CTC internet module...")
+        GPIO.output(self.cfg['RELAY_ENABLE'], GPIO.HIGH)
+        time.sleep(5)
+        GPIO.output(self.cfg['RELAY_ENABLE'], GPIO.LOW)
+        print("Done")
+
 # ------------------------------------------------------
-wd = WifiWatchdog()
+wd = Watchdog()
 
 # Schedule every..
-schedule.every(1).hours.do(wd.check)
+schedule.every(0.5).minutes.do(wd.check)
 
 
 # ------------------------------------------------------
@@ -64,4 +67,4 @@ try:
         time.sleep(1)
 finally:
     print(" Logger failed")
-    
+
