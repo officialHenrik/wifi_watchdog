@@ -8,6 +8,8 @@ import json
 import os
 
 import RPi.GPIO as GPIO
+from SheetItf import SheetItf
+import config
 
 # ------------------------------------------------------
 class Watchdog:
@@ -25,6 +27,8 @@ class Watchdog:
         GPIO.setup(self.cfg['RELAY_ENABLE'], GPIO.OUT)
         GPIO.output(self.cfg['RELAY_ENABLE'], GPIO.LOW)
 
+        # logger
+        self.sheet = SheetItf(config.GOOGLE)
 
     def check(self):
         FNULL = open(os.devnull, 'w')
@@ -33,9 +37,14 @@ class Watchdog:
         if error == 0:
             # success
             print("ping success!")
-            self.tests += 1
+            if self.tests == 0:
+                self.log("Ping ok")
+                self.tests += 1
         elif error == 1:
             print("local host unreachable")
+            if self.tests > 0:
+                self.tests = 0
+                self.log("Ping failed")
             self.ctc_reboot()
         elif error == 2:
             print("local network unreachable")
@@ -48,6 +57,12 @@ class Watchdog:
         time.sleep(5)
         GPIO.output(self.cfg['RELAY_ENABLE'], GPIO.LOW)
         print("Done")
+
+    def log(self, txt):
+        self.sheet.addToRow([str(time.strftime("%d/%m/%Y")), str(time.strftime("%H:%M:%S"))])
+        self.sheet.addToRow([txt])
+        print("pushing:", self.sheet.nextRow)
+        self.sheet.pushRow()
 
 # ------------------------------------------------------
 wd = Watchdog()
@@ -66,5 +81,6 @@ try:
        	schedule.run_pending()
         time.sleep(1)
 finally:
-    print(" Logger failed")
-
+    print(" Watchdog failed")
+    GPIO.cleanup() # clean up 
+GPIO.cleanup() # clean up, default
