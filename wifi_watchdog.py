@@ -7,6 +7,7 @@ import telnetlib
 import json
 import os
 
+from ../sheetLog/sheetLog import sheetItf
     
 # ------------------------------------------------------
 class WifiWatchdog:
