@@ -100,7 +100,6 @@ schedule.every(1).hours.do(wd.check)
 print(" Wifi watchdog initiated")
 
 try:
-    schedule.run_all()
     while True:
        	schedule.run_pending()
         time.sleep(1)
