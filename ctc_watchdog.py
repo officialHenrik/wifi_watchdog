@@ -8,7 +8,7 @@ import json
 import os
 
 import RPi.GPIO as GPIO
-from SheetItf import SheetItf
+from sheetLog.SheetItf import SheetItf
 import config
 
 # ------------------------------------------------------
@@ -18,7 +18,6 @@ class Watchdog:
         print("init watchdog")
         with open('config.json', 'r') as f:
             self.cfg = json.load(f)
-        self.tests = 0
 
         # Setup
         GPIO.setmode(GPIO.BCM) # set up BCM GPIO numbering
@@ -29,6 +28,9 @@ class Watchdog:
 
         # logger
         self.sheet = SheetItf(config.GOOGLE)
+
+        self.log("Watchdog initiated")
+        self.tests = 1
 
     def check(self):
         FNULL = open(os.devnull, 'w')
