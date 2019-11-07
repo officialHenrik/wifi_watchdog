@@ -88,14 +88,14 @@ class Watchdog:
         self.sheet.pushRow()
 
     def logStat(self):
+        self.
         self.log([self.tests, self.reboots, self.fails])
 
 # ------------------------------------------------------
 wd = Watchdog()
 
 # Schedule every..
-schedule.every(0.5).minutes.do(wd.check)
-#schedule.every(10).minutes.do(wd.logStat)
+schedule.every(10).minutes.do(wd.logStat)
 schedule.every().hour.at(":00").do(wd.logStat)
 
 
