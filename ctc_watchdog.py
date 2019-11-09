@@ -48,16 +48,19 @@ class Watchdog:
                 # success
                 print("ping success!")
                 if self.failCnt > 0:
+                    # fist success, print
                     self.log(["Ping ok"])
                 self.failCnt = 0
             elif error == 1:
                 print("host unreachable")
                 self.fails +=1
-                self.failCnt +=1
+
                 if self.failCnt == 0:
-                    self.tests = 0
+                    # first fail, print
                     self.log(["Ping failed"])
-                elif self.failCnt >= 6:
+
+                self.failCnt +=1
+                if self.failCnt >= 6:
                     self.ctc_reboot()
                     self.failCnt = 0 
             elif error == 2:
