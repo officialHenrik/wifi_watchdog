@@ -32,6 +32,7 @@ class Watchdog:
         self.tests = 0
         self.fails = 0
         self.failCnt = 0
+        self.noConn = 0
         self.reboots = 0
         self.enabled = 1
 
@@ -42,9 +43,17 @@ class Watchdog:
         self.enabledCheck()
 
         if self.enabled > 0:
-            error = subprocess.call(["ping", "-c1", self.cfg['localhost']], stdout=FNULL)
-            self.tests += 1
 
+            # Check internet connection
+            error = subprocess.call(["ping", "-c1", self.cfg['globalhost']], stdout=FNULL)
+            if error > 0:
+                self.noConn += 1
+                print("No internet connection")
+                return 1
+
+            # Check connection with ctc pump
+            error = subprocess.call(["ping", "-c4", self.cfg['localhost']], stdout=FNULL)
+            self.tests += 1
             if error == 0:
                 # success
                 print("ping success!")
@@ -55,15 +64,13 @@ class Watchdog:
             elif error == 1:
                 print("host unreachable")
                 self.fails +=1
-
                 if self.failCnt == 0:
                     # first fail, print
                     self.log(["Ping failed"])
-
                 self.failCnt +=1
                 if self.failCnt >= 6:
                     self.ctc_reboot()
-                    self.failCnt = 0 
+                    self.failCnt = 0
             elif error == 2:
                 print("local network unreachable")
             else:
@@ -92,7 +99,7 @@ class Watchdog:
         self.sheet.pushRow()
 
     def logStat(self):
-        self.log([self.tests, self.reboots, self.fails])
+        self.log([self.tests, self.reboots, self.fails, self.noConn])
 
 # ------------------------------------------------------
 wd = Watchdog()
@@ -113,5 +120,5 @@ try:
         time.sleep(1)
 finally:
     print(" Watchdog failed")
-    GPIO.cleanup() # clean up 
+    GPIO.cleanup() # clean up
 GPIO.cleanup() # clean up, default
