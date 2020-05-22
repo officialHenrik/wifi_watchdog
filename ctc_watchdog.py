@@ -37,10 +37,11 @@ class Watchdog:
 
     def check(self):
 
+        FNULL = open(os.devnull, 'w')
+
         self.enabledCheck()
 
         if self.enabled > 0:
-            FNULL = open(os.devnull, 'w')
             error = subprocess.call(["ping", "-c1", self.cfg['localhost']], stdout=FNULL)
             self.tests += 1
 
